@@ -1,0 +1,48 @@
+on:
+  - push
+  - pull_request
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+      
+      - run: brew install isl nasm ocmtoc
+        env:
+          HOMEBREW_NO_INSTALL_CLEANUP: 1
+          HOMEBREW_NO_AUTO_UPDATE: 1
+
+      - run: brew install --cask maciasl
+        env:
+          HOMEBREW_NO_INSTALL_CLEANUP: 1
+          HOMEBREW_NO_AUTO_UPDATE: 1
+
+      # BEGIN copied from https://github.com/acidanthera/OpenCorePkg/blob/master/.github/workflows/build.yml
+      - name: Add Linux Toolchain
+        run: brew tap FiloSottile/homebrew-musl-cross
+
+      - name: Install Linux Toolchain
+        run: brew install musl-cross
+        env:
+          HOMEBREW_NO_INSTALL_CLEANUP: 1
+          HOMEBREW_NO_AUTO_UPDATE: 1
+
+      - name: Install Dependencies
+        run: brew install openssl mingw-w64
+        env:
+          HOMEBREW_NO_INSTALL_CLEANUP: 1
+          HOMEBREW_NO_AUTO_UPDATE: 1
+      # END
+
+      - run: make all
+
+      - run: make dist
+
+      - uses: actions/upload-artifact@v3
+        with:
+          path: |
+            OpenCore-*.dmg.gz
+            OpenCoreEFIFolder-*.zip
